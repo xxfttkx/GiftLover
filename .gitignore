@@ -1,0 +1,27 @@
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+bin/
+obj/
+
+# Temporary files
+*.log
+*.tmp
+*.bak
+*.cache
+
+# Rider IDE (JetBrains)
+.idea/
+*.iml
+
+# Mac & Windows system files
+.DS_Store
+Thumbs.db
+
+# SMAPI generated config
+config.json

@@ -1,0 +1,10 @@
+{
+  "Name": "GiftLover",
+  "Author": "lauirf",
+  "Version": "1.0.0",
+  "Description": "方便查看npc是否喜欢当前物品", 
+  "UniqueID": "lauirf.GiftLover",
+  "EntryDll": "GiftLover.dll",
+  "MinimumApiVersion": "4.0.0",
+  "UpdateKeys": ["Nexus:???", "Gtihub:user/repository", "Moddrop:???"]
+}
