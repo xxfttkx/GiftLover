@@ -14,6 +14,12 @@ namespace GiftLover
         public class ModConfig
         {
             public int distance { get; set; } = 15;
+
+            /// <summary>如果NPC好感度已满，是否隐藏图标</summary>
+            public bool hideWhenFriendshipMaxed { get; set; } = true;
+
+            /// <summary>如果没有送礼次数，是否隐藏图标</summary>
+            public bool hideWhenNoGiftLeft { get; set; } = true;
         }
         private ModConfig modConfig;
         private Dictionary<string, Texture2D> tasteIcons = new();
