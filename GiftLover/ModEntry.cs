@@ -1,10 +1,12 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Netcode;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
+using StardewValley.Network;
 
 namespace GiftLover
 {
@@ -84,7 +86,7 @@ namespace GiftLover
             if (!npcAndItem[npc].ContainsKey(item))
             {
                 npcAndItem[npc][item] = GetGiftReaction(npc.getGiftTasteForThisItem(item));
-                this.Monitor.Log($"{npc.Name} {npcAndItem[npc][item]} {currentItem.Name}.", LogLevel.Debug);
+                this.Monitor.Log($"{npc.Name} {npcAndItem[npc][item]} {currentItem.Name}.", LogLevel.Trace);
             }
             return npcAndItem[npc][item];
         }
@@ -107,6 +109,10 @@ namespace GiftLover
 
             foreach (var npc in nearbyNpcs)
             {
+                // 若开启了“满好感隐藏”并且NPC好感度已满，则跳过绘制
+                if (modConfig.hideWhenFriendshipMaxed && IsMaxFriendship(npc))
+                    continue;
+
                 // 判断 NPC 喜好
                 var taste = GetNpcGiftTaste(npc, currentItem);
                 
@@ -125,6 +131,19 @@ namespace GiftLover
             if (tasteIcons.TryGetValue(taste.ToLower(), out Texture2D texture))
                 return texture;
             return null;
+        }
+
+        private bool IsMaxFriendship(NPC npc)
+        {
+            if (npc == null || Game1.player.friendshipData == null)
+                return false;
+
+            Friendship friendship;
+            if (!Game1.player.friendshipData.TryGetValue(npc.Name, out friendship))
+                return false;
+
+            int maxPoints = npc.isMarried() ? 3250 : 2500;
+            return friendship.Points >= maxPoints;
         }
     }
 }
