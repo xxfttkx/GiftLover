@@ -1,4 +1,5 @@
 ﻿using System;
+using GenericModConfigMenu;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Netcode;
@@ -13,11 +14,14 @@ namespace GiftLover
     /// <summary>模组入口点</summary>
     public class ModEntry : Mod
     {
+        private bool isGMCMRegistered = false;
         public class ModConfig
         {
             public int distance { get; set; } = 15;
             public int dayGiftLimit { get; set; } = 1;
             public int weekGiftLimit { get; set; } = 2;
+            public int xOffest { get; set; } = 32;
+            public int yOffest { get; set; } = -64;
             public bool hideWhenHoldingTool { get; set; } = true;
 
             /// <summary>如果NPC好感度已满，是否隐藏图标</summary>
@@ -48,6 +52,7 @@ namespace GiftLover
                 ["hate"] = helper.ModContent.Load<Texture2D>("assets/hate.png"),
                 ["neutral"] = helper.ModContent.Load<Texture2D>("assets/neutral.png"),
             };
+            helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
             helper.Events.Display.RenderedWorld += OnRenderedWorld;
         }
@@ -58,6 +63,14 @@ namespace GiftLover
             Monitor.Log("配置已重新加载", LogLevel.Info);
         }
 
+        private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
+        {
+            if (!isGMCMRegistered)
+            {
+                RegisterGMCM();
+                isGMCMRegistered = true;
+            }
+        }
 
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
@@ -126,7 +139,7 @@ namespace GiftLover
                 Texture2D icon = GetIconForTaste(taste);
                 if (icon != null)
                 {
-                    Vector2 worldPos = new Vector2(npc.Position.X + 30, npc.Position.Y - 64);
+                    Vector2 worldPos = new Vector2(npc.Position.X + modConfig.xOffest, npc.Position.Y + modConfig.yOffest);
                     Vector2 screenPos = Game1.GlobalToLocal(Game1.viewport, worldPos);
                     e.SpriteBatch.Draw(icon, screenPos, null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 1f);
                 }
@@ -172,5 +185,90 @@ namespace GiftLover
             return false;
         }
 
+        private void RegisterGMCM()
+        {
+            var gmcmApi = Helper.ModRegistry
+                .GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+            if (gmcmApi == null)
+                return;
+
+            gmcmApi.Register(
+                mod: ModManifest,
+                reset: () => modConfig = new ModConfig(),
+                save: () => Helper.WriteConfig(modConfig)
+            );
+
+            gmcmApi.AddNumberOption(
+                mod: ModManifest,
+                name: () => "显示距离",
+                tooltip: () => "玩家与 NPC 的最大距离，超出此距离图标将不显示",
+                getValue: () => modConfig.distance,
+                setValue: value => modConfig.distance = value,
+                min: 1,
+                max: 100
+            );
+
+            gmcmApi.AddNumberOption(
+                mod: ModManifest,
+                name: () => "每日送礼次数",
+                tooltip: () => "每日允许送礼的最大次数",
+                getValue: () => modConfig.dayGiftLimit,
+                setValue: value => modConfig.dayGiftLimit = value,
+                min: 0,
+                max: 10
+            );
+
+            gmcmApi.AddNumberOption(
+                mod: ModManifest,
+                name: () => "每周送礼次数",
+                tooltip: () => "每周允许送礼的最大次数",
+                getValue: () => modConfig.weekGiftLimit,
+                setValue: value => modConfig.weekGiftLimit = value,
+                min: 0,
+                max: 99
+            ); 
+            gmcmApi.AddNumberOption(
+                mod: ModManifest,
+                name: () => "xOffest",
+                tooltip: () => "xOffest",
+                getValue: () => modConfig.xOffest,
+                setValue: value => modConfig.xOffest = value,
+                min: -100,
+                max: 100
+            );
+            gmcmApi.AddNumberOption(
+                mod: ModManifest,
+                name: () => "yOffest",
+                tooltip: () => "yOffest",
+                getValue: () => modConfig.yOffest,
+                setValue: value => modConfig.yOffest = value,
+                min: -100,
+                max: 100
+            );
+
+            gmcmApi.AddBoolOption(
+                mod: ModManifest,
+                name: () => "拿工具时隐藏图标",
+                tooltip: () => "当你手持工具（如锄头、斧头）时，不显示图标",
+                getValue: () => modConfig.hideWhenHoldingTool,
+                setValue: value => modConfig.hideWhenHoldingTool = value
+            );
+
+            gmcmApi.AddBoolOption(
+                mod: ModManifest,
+                name: () => "好感已满时隐藏图标",
+                tooltip: () => "NPC 好感度已满时不显示图标",
+                getValue: () => modConfig.hideWhenFriendshipMaxed,
+                setValue: value => modConfig.hideWhenFriendshipMaxed = value
+            );
+
+            gmcmApi.AddBoolOption(
+                mod: ModManifest,
+                name: () => "送礼次数用尽时隐藏图标",
+                tooltip: () => "若无法继续送礼（每日/每周次数用尽），不显示图标",
+                getValue: () => modConfig.hideWhenGiftLimitReached,
+                setValue: value => modConfig.hideWhenGiftLimitReached = value
+            );
+        }
     }
 }
