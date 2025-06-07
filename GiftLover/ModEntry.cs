@@ -23,7 +23,7 @@ namespace GiftLover
             /// <summary>如果NPC好感度已满，是否隐藏图标</summary>
             public bool hideWhenFriendshipMaxed { get; set; } = true;
             /// <summary>如果没有送礼次数，是否隐藏图标</summary>
-            public bool hideWhenNoGiftLeft { get; set; } = true;
+            public bool hideWhenGiftLimitReached { get; set; } = true;
         }
         private ModConfig modConfig;
         private Dictionary<string, Texture2D> tasteIcons = new();
@@ -96,6 +96,9 @@ namespace GiftLover
         }
         private void OnRenderedWorld(object sender, RenderedWorldEventArgs e)
         {
+            // 正在剧情动画中
+            if (Game1.CurrentEvent != null)
+                return;
             if (modConfig.hideWhenHoldingTool && Game1.player.CurrentTool != null)
                 return;
             if (currentItem == null)
@@ -114,7 +117,7 @@ namespace GiftLover
                 if (modConfig.hideWhenFriendshipMaxed && IsMaxFriendship(npc))
                     continue;
                 // 如果配置启用了“送礼次数用完时隐藏”，并且该 NPC 本日或本周的送礼次数已用尽，则不显示图标
-                if (modConfig.hideWhenNoGiftLeft && IsGiftLimitReached(npc))
+                if (modConfig.hideWhenGiftLimitReached && IsGiftLimitReached(npc))
                     continue;
 
                 // 判断 NPC 喜好
