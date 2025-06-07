@@ -16,10 +16,11 @@ namespace GiftLover
         public class ModConfig
         {
             public int distance { get; set; } = 15;
+            public int dayGiftLimit { get; set; } = 1;
+            public int weekGiftLimit { get; set; } = 2;
 
             /// <summary>如果NPC好感度已满，是否隐藏图标</summary>
             public bool hideWhenFriendshipMaxed { get; set; } = true;
-
             /// <summary>如果没有送礼次数，是否隐藏图标</summary>
             public bool hideWhenNoGiftLeft { get; set; } = true;
         }
@@ -113,6 +114,10 @@ namespace GiftLover
                 if (modConfig.hideWhenFriendshipMaxed && IsMaxFriendship(npc))
                     continue;
 
+                // 如果配置启用了“送礼次数用完时隐藏”，并且该 NPC 本日或本周的送礼次数已用尽，则不显示图标
+                if (modConfig.hideWhenNoGiftLeft && IsGiftLimitReached(npc))
+                    continue;
+
                 // 判断 NPC 喜好
                 var taste = GetNpcGiftTaste(npc, currentItem);
                 
@@ -145,5 +150,25 @@ namespace GiftLover
             int maxPoints = npc.isMarried() ? 3250 : 2500;
             return friendship.Points >= maxPoints;
         }
+
+        private bool IsGiftLimitReached(NPC npc)
+        {
+            if (npc == null || Game1.player.friendshipData == null)
+                return false;
+
+            if (!Game1.player.friendshipData.TryGetValue(npc.Name, out Friendship friendship))
+                return false;
+
+            // 每周最多 2 次礼物（不包括生日）
+            if (friendship.GiftsThisWeek >= modConfig.weekGiftLimit && !npc.isBirthday())
+                return true;
+
+            // 今天是否已经送过
+            if (friendship.GiftsToday >= modConfig.dayGiftLimit)
+                return true;
+
+            return false;
+        }
+
     }
 }
