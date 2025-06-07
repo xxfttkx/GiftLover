@@ -18,6 +18,7 @@ namespace GiftLover
             public int distance { get; set; } = 15;
             public int dayGiftLimit { get; set; } = 1;
             public int weekGiftLimit { get; set; } = 2;
+            public bool hideWhenHoldingTool { get; set; } = true;
 
             /// <summary>如果NPC好感度已满，是否隐藏图标</summary>
             public bool hideWhenFriendshipMaxed { get; set; } = true;
@@ -62,17 +63,7 @@ namespace GiftLover
         {
             if (!Context.IsWorldReady)
                 return;
-
             currentItem = Game1.player.CurrentItem;
-            nearbyNpcs.Clear();
-
-            foreach (NPC npc in Game1.currentLocation.characters)
-            {
-                if (npc.IsVillager && npc.withinPlayerThreshold(modConfig.distance)) // 4 tile threshold
-                {
-                    nearbyNpcs.Add(npc);
-                }
-            }
         }
 
         public String GetNpcGiftTaste(NPC npc, Item item)
@@ -105,22 +96,30 @@ namespace GiftLover
         }
         private void OnRenderedWorld(object sender, RenderedWorldEventArgs e)
         {
+            if (modConfig.hideWhenHoldingTool && Game1.player.CurrentTool != null)
+                return;
             if (currentItem == null)
                 return;
-
+            nearbyNpcs.Clear();
+            foreach (NPC npc in Game1.currentLocation.characters)
+            {
+                if (npc.IsVillager && npc.CanReceiveGifts() && npc.withinPlayerThreshold(modConfig.distance)) // 4 tile threshold
+                {
+                    nearbyNpcs.Add(npc);
+                }
+            }
             foreach (var npc in nearbyNpcs)
             {
                 // 若开启了“满好感隐藏”并且NPC好感度已满，则跳过绘制
                 if (modConfig.hideWhenFriendshipMaxed && IsMaxFriendship(npc))
                     continue;
-
                 // 如果配置启用了“送礼次数用完时隐藏”，并且该 NPC 本日或本周的送礼次数已用尽，则不显示图标
                 if (modConfig.hideWhenNoGiftLeft && IsGiftLimitReached(npc))
                     continue;
 
                 // 判断 NPC 喜好
                 var taste = GetNpcGiftTaste(npc, currentItem);
-                
+
                 Texture2D icon = GetIconForTaste(taste);
                 if (icon != null)
                 {
